@@ -1,0 +1,92 @@
+-- ================================
+-- CRIAÇÃO DO BANCO DE DADOS
+-- ================================
+CREATE DATABASE catalogo_filmes
+    WITH 
+    OWNER = postgres
+    ENCODING = 'UTF8'
+    LC_COLLATE = 'pt_BR.UTF-8'
+    LC_CTYPE = 'pt_BR.UTF-8'
+    TABLESPACE = pg_default
+    CONNECTION LIMIT = -1;
+
+-- Conecta ao banco recém-criado
+\c catalogo_filmes;
+
+-- ================================
+-- TABELA: usuario
+-- ================================
+CREATE TABLE usuario (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    senha VARCHAR(255) NOT NULL DEFAULT '123',  -- senha (armazenar hash, nunca texto puro)
+    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ================================
+-- TABELA: filme
+-- ================================
+CREATE TABLE filme (
+    id SERIAL PRIMARY KEY,
+    titulo VARCHAR(200) NOT NULL,
+    ano_lancamento INT CHECK (ano_lancamento >= 1888),
+    genero VARCHAR(50),
+    duracao_minutos INT CHECK (duracao_minutos > 0),
+    diretor VARCHAR(100)
+);
+
+-- ================================
+-- TABELA: avaliacao
+-- ================================
+CREATE TABLE avaliacao (
+    id SERIAL PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    filme_id INT NOT NULL,
+    nota NUMERIC(3,1) CHECK (nota >= 0 AND nota <= 10),
+    comentario TEXT,
+    data_avaliacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuario (id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_filme FOREIGN KEY (filme_id)
+        REFERENCES filme (id)
+        ON DELETE CASCADE,
+    CONSTRAINT uq_usuario_filme UNIQUE (usuario_id, filme_id)
+);
+
+-- ================================
+-- DADOS DE EXEMPLO
+-- ================================
+-- (As senhas abaixo são apenas exemplos simples. 
+-- Em produção, use hashes de bcrypt/argon2.)
+INSERT INTO usuario (nome, email, senha)
+VALUES 
+    ('Maria Souza', 'maria@example.com', 'senha123'),
+    ('João Lima', 'joao@example.com', '123456'),
+    ('Carla Mendes', 'carla@example.com', 'minhasenha');
+
+INSERT INTO filme (titulo, ano_lancamento, genero, duracao_minutos, diretor)
+VALUES 
+    ('Matrix', 1999, 'Ficção Científica', 136, 'Lana Wachowski'),
+    ('O Senhor dos Anéis: A Sociedade do Anel', 2001, 'Fantasia', 178, 'Peter Jackson'),
+    ('Interestelar', 2014, 'Ficção Científica', 169, 'Christopher Nolan');
+
+INSERT INTO avaliacao (usuario_id, filme_id, nota, comentario)
+VALUES 
+    (1, 1, 9.5, 'Um clássico da ficção científica!'),
+    (2, 2, 10.0, 'Uma obra-prima do cinema.'),
+    (3, 3, 9.0, 'Visual e trilha sonora impecáveis.');
+
+-- ================================
+-- CONSULTA DE TESTE
+-- ================================
+SELECT 
+    u.nome AS usuario,
+    f.titulo AS filme,
+    a.nota,
+    a.comentario,
+    a.data_avaliacao
+FROM avaliacao a
+JOIN usuario u ON a.usuario_id = u.id
+JOIN filme f ON a.filme_id = f.id;
