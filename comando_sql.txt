@@ -1,0 +1,3 @@
+psql -U postgres -c "DROP DATABASE IF EXISTS catalogo;"
+psql -U postgres -c "CREATE DATABASE catalogo;"
+psql -U postgres -d catalogo -f backup_database/catalogo.sql
